@@ -1,9 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { ClientsModule, Transport } from '@nestjs/microservices';
+import { EVENTS_CLIENT } from './constants';
 import { EventGeneratorService } from './event-generator.service';
-
-export const EVENTS_CLIENT = 'EVENTS_CLIENT';
 
 @Module({
   imports: [

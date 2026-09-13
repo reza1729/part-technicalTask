@@ -1,8 +1,14 @@
-import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
+import {
+  Inject,
+  Injectable,
+  Logger,
+  OnModuleDestroy,
+  OnModuleInit,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ClientProxy } from '@nestjs/microservices';
 import { faker } from '@faker-js/faker';
-import { EVENTS_CLIENT } from './app.module';
+import { EVENTS_CLIENT } from './constants';
 import { AgentEventPayload } from './event.types';
 
 const EVENT_TYPES: Array<{
