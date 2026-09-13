@@ -1,0 +1,120 @@
+version: '3.9'
+
+services:
+  mongo:
+    image: mongo:7
+    container_name: part-mongo
+    ports:
+      - '27017:27017'
+    volumes:
+      - mongo_data:/data/db
+    healthcheck:
+      test: ['CMD', 'mongosh', '--eval', "db.adminCommand('ping')"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: part-redis
+    ports:
+      - '6379:6379'
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ['CMD', 'redis-cli', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: part-rabbitmq
+    ports:
+      - '5672:5672'
+      - '15672:15672'
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  process:
+    build:
+      context: ./apps/process
+      dockerfile: Dockerfile
+    container_name: part-process
+    ports:
+      - '3000:3000'
+    environment:
+      PORT: 3000
+      MONGO_URI: mongodb://mongo:27017/part_process
+      REDIS_URL: redis://redis:6379
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      RABBITMQ_QUEUE: events_queue
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    restart: unless-stopped
+
+  agent-1:
+    build:
+      context: ./apps/agent
+      dockerfile: Dockerfile
+    container_name: part-agent-1
+    environment:
+      AGENT_ID: agent-1
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      RABBITMQ_QUEUE: events_queue
+      EVENT_INTERVAL_MS: 200
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      process:
+        condition: service_started
+    restart: unless-stopped
+
+  agent-2:
+    build:
+      context: ./apps/agent
+      dockerfile: Dockerfile
+    container_name: part-agent-2
+    environment:
+      AGENT_ID: agent-2
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      RABBITMQ_QUEUE: events_queue
+      EVENT_INTERVAL_MS: 200
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      process:
+        condition: service_started
+    restart: unless-stopped
+
+  agent-3:
+    build:
+      context: ./apps/agent
+      dockerfile: Dockerfile
+    container_name: part-agent-3
+    environment:
+      AGENT_ID: agent-3
+      RABBITMQ_URL: amqp://guest:guest@rabbitmq:5672
+      RABBITMQ_QUEUE: events_queue
+      EVENT_INTERVAL_MS: 200
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      process:
+        condition: service_started
+    restart: unless-stopped
+
+volumes:
+  mongo_data:
+  redis_data:
